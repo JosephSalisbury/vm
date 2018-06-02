@@ -1,17 +1,28 @@
 package virtualbox
 
 import (
-	"math/rand"
+	"net"
 )
 
 const (
-	// TODO: Use actual port limits (/proc?)
-	lowPortNumber  = 3000
-	highPortNumber = 65000
+	localhostNet = "localhost:0"
+	tcp          = "tcp"
 )
 
 // getFreePort returns a port number that can be used.
 func getFreePort() int {
-	// TODO: Actually check port is free.
-	return rand.Intn(highPortNumber-lowPortNumber) + lowPortNumber
+	addr, err := net.ResolveTCPAddr(tcp, localhostNet)
+	if err != nil {
+		return 0
+	}
+
+	l, err := net.ListenTCP(tcp, addr)
+	if err != nil {
+		return 0
+	}
+	defer l.Close()
+
+	port := l.Addr().(*net.TCPAddr).Port
+
+	return port
 }
