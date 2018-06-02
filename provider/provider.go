@@ -44,6 +44,7 @@ type Status struct {
 	// IP is the IP that the VM is listening on.
 	IP string
 
+	// TODO: This should be a map of host -> guest ports.
 	// Port is the port that the VM is listening on.
 	Port int
 }

@@ -8,7 +8,21 @@ import (
 	"github.com/JosephSalisbury/vm/provider"
 )
 
+const (
+	nameIndex = 1
+	portIndex = 18
+
+	comma         = ","
+	newLine       = "\n"
+	portLine      = "host port"
+	quotationMark = "\""
+	space         = " "
+
+	localhost = "127.0.0.1"
+)
+
 func (p *virtualBoxProvider) List() ([]provider.Status, error) {
+	// List the VMs.
 	listVMsOut, err := p.vboxmanage(vboxManageCommand{
 		description: "list VMs",
 		args: []string{
@@ -19,49 +33,52 @@ func (p *virtualBoxProvider) List() ([]provider.Status, error) {
 		return nil, err
 	}
 
+	// Create a slice of all VM names.
 	names := []string{}
-	for _, line := range strings.Split(string(listVMsOut), "\n") {
+	listVMsOutLines := strings.Split(string(listVMsOut), newLine)
+	for _, line := range listVMsOutLines {
 		if line != "" {
-			name := strings.Split(line, "\"")[1]
+			name := strings.Split(line, quotationMark)[nameIndex]
 			names = append(names, name)
 		}
 	}
 
+	// Create a slice of VM statuses.
 	statuses := []provider.Status{}
 	for _, name := range names {
-		// TODO: Clean this shit up.
-		var hostPort int
+		// Create the VM status.
+		status := provider.Status{
+			ID: name,
+			IP: localhost,
+		}
 
+		// Get the info for this VM.
 		showVMInfoOut, err := p.vboxmanage(vboxManageCommand{
-			description: "show VM info",
+			description: fmt.Sprintf("show VM info for VM '%s'", status.ID),
 			args: []string{
-				"showvminfo", name,
+				"showvminfo", status.ID,
 			},
 		})
 		if err != nil {
 			return nil, err
 		}
+		showVMInfoLines := strings.Split(showVMInfoOut, newLine)
 
-		for _, line := range strings.Split(string(showVMInfoOut), "\n") {
-			if strings.Contains(line, "host port") {
-				hostPort, err = strconv.Atoi(
-					strings.TrimSuffix(
-						strings.Split(line, " ")[18],
-						",",
-					),
-				)
+		// Get the port for this VM.
+		for _, line := range showVMInfoLines {
+			if strings.Contains(line, portLine) {
+				portStringWithSuffix := strings.Split(line, space)[portIndex]
+				portString := strings.TrimSuffix(portStringWithSuffix, comma)
+
+				port, err := strconv.Atoi(portString)
 				if err != nil {
 					return nil, err
 				}
-				break
+
+				status.Port = port
 			}
 		}
 
-		status := provider.Status{
-			ID:   name,
-			IP:   fmt.Sprintf("127.0.0.1"),
-			Port: hostPort,
-		}
 		statuses = append(statuses, status)
 	}
 
