@@ -24,12 +24,12 @@ func New(config provider.Config) (provider.Interface, error) {
 		return nil, provider.InvalidConfigError
 	}
 
-	// TODO: Use exec.LookPath.
-	if err := exec.Command("VBoxManage", "--help").Run(); err != nil {
+	if _, err := exec.LookPath("VBoxManage"); err != nil {
 		return nil, VBoxManageMissingError
 	}
-
-	// TODO: Check `vbox-configdrive-gen` is available.
+	if _, err := exec.LookPath("vbox-configdrive-gen"); err != nil {
+		return nil, VBoxConfigdriveGenMissingError
+	}
 
 	p := &virtualBoxProvider{
 		logger: config.Logger,
