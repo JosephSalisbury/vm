@@ -21,7 +21,7 @@ If more than one VM is available, the VM ID must be passed.`,
 	}
 )
 
-// TODO: Add --add.
+// TODO: Add --all.
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)

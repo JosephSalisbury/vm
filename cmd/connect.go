@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/JosephSalisbury/vm/provider"
 	"github.com/JosephSalisbury/vm/provider/providerset"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -37,6 +38,8 @@ If --force-mosh or --force-ssh are specified, those methods will be used specifi
 	connectRetryDelay  time.Duration
 	connectSuccessTime time.Duration
 )
+
+// TODO: Add support for mosh.
 
 func init() {
 	connectCmd.Flags().BoolVar(&forceMosh, "force-mosh", false, "if true, only mosh will be used for the connection")

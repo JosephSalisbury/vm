@@ -32,6 +32,10 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 	ignition string
 )
 
+// TODO: Add support for passing a Container Linux Config.
+// TODO: Add support for passing a URL.
+// TODO: Add support for specifying secrets.
+
 func init() {
 	createCmd.Flags().StringVar(&channel, "channel", "stable", "channel for CoreOS Container Linux")
 	createCmd.Flags().IntVar(&cpu, "cpu", 2, "number of CPU cores for the VM")
