@@ -1,20 +1,27 @@
 package virtualbox
 
 import (
-	"os/exec"
 	"time"
 )
 
 func (p *virtualBoxProvider) Delete(id string) error {
-	p.logger.Printf("powering off VM %s", id)
-	if err := exec.Command("VBoxManage", "controlvm", id, "poweroff").Run(); err != nil {
-		p.logger.Printf("could not poweroff VM: %s", err)
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "power off VM",
+		args: []string{
+			"controlvm", id, "poweroff",
+		},
+	}); err != nil {
+		return err
 	}
 
 	time.Sleep(1 * time.Second)
 
-	p.logger.Printf("deleting VM %s", id)
-	if err := exec.Command("VBoxManage", "unregistervm", id, "--delete").Run(); err != nil {
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "delete VM",
+		args: []string{
+			"unregistervm", id, "--delete",
+		},
+	}); err != nil {
 		return err
 	}
 

@@ -2,7 +2,6 @@ package virtualbox
 
 import (
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -10,9 +9,12 @@ import (
 )
 
 func (p *virtualBoxProvider) List() ([]provider.Status, error) {
-	// TODO: We should get machine IP / port from here.
-
-	listVMsOut, err := exec.Command("VBoxManage", "list", "vms").Output()
+	listVMsOut, err := p.vboxmanage(vboxManageCommand{
+		description: "list VMs",
+		args: []string{
+			"list", "vms",
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -29,10 +31,17 @@ func (p *virtualBoxProvider) List() ([]provider.Status, error) {
 	for _, name := range names {
 		// TODO: Clean this shit up.
 		var hostPort int
-		showVMInfoOut, err := exec.Command("VBoxManage", "showvminfo", name).Output()
+
+		showVMInfoOut, err := p.vboxmanage(vboxManageCommand{
+			description: "show VM info",
+			args: []string{
+				"showvminfo", name,
+			},
+		})
 		if err != nil {
 			return nil, err
 		}
+
 		for _, line := range strings.Split(string(showVMInfoOut), "\n") {
 			if strings.Contains(line, "host port") {
 				hostPort, err = strconv.Atoi(

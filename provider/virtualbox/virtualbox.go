@@ -37,3 +37,21 @@ func New(config provider.Config) (provider.Interface, error) {
 
 	return p, nil
 }
+
+type vboxManageCommand struct {
+	description string
+	args        []string
+}
+
+func (p *virtualBoxProvider) vboxmanage(command vboxManageCommand) (string, error) {
+	p.logger.Printf("executing: %s", command.description)
+
+	out, err := exec.Command("VBoxManage", command.args...).Output()
+	stringOut := string(out)
+
+	if err != nil {
+		p.logger.Printf("VBoxManage output: %s", stringOut)
+	}
+
+	return stringOut, err
+}

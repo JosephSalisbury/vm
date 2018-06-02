@@ -63,56 +63,98 @@ func (p *virtualBoxProvider) Create(channel string, ignitionPath string, cpu int
 	p.logger.Printf("configdrive vmdk is at %s", configDriveVMDKPath)
 
 	p.logger.Printf("creating configdrive")
-	out, err := exec.Command("bash", "-c", fmt.Sprintf("cat %s | vbox-configdrive-gen > %s", ignitionPath, configDriveImagePath)).Output()
+	vboxConfigdriveGenOut, err := exec.Command("bash", "-c", fmt.Sprintf("cat %s | vbox-configdrive-gen > %s", ignitionPath, configDriveImagePath)).Output()
 	if err != nil {
-		p.logger.Printf("%s", string(out))
+		p.logger.Printf("%s", string(vboxConfigdriveGenOut))
 		return err
 	}
 
-	// TODO: Abstract vboxmanage commands (better error handling)
-	p.logger.Printf("creating configdrive vmdk")
-	out2, err := exec.Command("VBoxManage", "internalcommands", "createrawvmdk", "-filename", configDriveVMDKPath, "-rawdisk", configDriveImagePath).Output()
-	if err != nil {
-		p.logger.Printf("%s", string(out2))
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "create configdrive vmdk",
+		args: []string{
+			"internalcommands", "createrawvmdk",
+			"-filename", configDriveVMDKPath,
+			"-rawdisk", configDriveImagePath,
+		},
+	}); err != nil {
 		return err
 	}
 
-	p.logger.Printf("creating vm")
 	id := provider.ID()
 
-	if err := exec.Command("VBoxManage", "createvm", "--name", id, "--ostype", "Linux26_64", "--register").Run(); err != nil {
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "create virtual machine",
+		args: []string{
+			"createvm",
+			"--name", id,
+			"--ostype", "Linux26_64",
+			"--register",
+		},
+	}); err != nil {
 		return err
 	}
 
-	if err := exec.Command("VBoxManage", "modifyvm", id, "--cpus", strconv.Itoa(cpu)).Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("VBoxManage", "modifyvm", id, "--memory", strconv.Itoa(ram*1024)).Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("VBoxManage", "modifyvm", id, "--audio", "none").Run(); err != nil {
-		return err
-	}
-
-	if err := exec.Command("VBoxManage", "storagectl", id, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI", "--portcount", "2").Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("VBoxManage", "storageattach", id, "--storagectl", "SATA", "--port", "0", "--device", "0", "--type", "hdd", "--medium", uncompressedPath, "--mtype", "immutable").Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("VBoxManage", "storageattach", id, "--storagectl", "SATA", "--port", "1", "--device", "0", "--type", "hdd", "--medium", configDriveVMDKPath, "--mtype", "immutable").Run(); err != nil {
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "configure virtual machine resources",
+		args: []string{
+			"modifyvm", id,
+			"--cpus", strconv.Itoa(cpu),
+			"--memory", strconv.Itoa(ram * 1024),
+			"--audio", "none",
+			"--natpf1", fmt.Sprintf("ssh,tcp,,%v,,22", getFreePort()),
+		},
+	}); err != nil {
 		return err
 	}
 
-	// TODO: Mount secret volume.
-
-	freePort := getFreePort()
-	if err := exec.Command("VBoxManage", "modifyvm", id, "--natpf1", fmt.Sprintf("ssh,tcp,,%v,,22", freePort)).Run(); err != nil {
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "attach SATA controller",
+		args: []string{
+			"storagectl", id,
+			"--name", "SATA",
+			"--add", "sata",
+			"--controller", "IntelAHCI",
+			"--portcount", "2",
+		},
+	}); err != nil {
+		return err
+	}
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "attach CoreOS disk",
+		args: []string{
+			"storageattach", id,
+			"--storagectl", "SATA",
+			"--port", "0",
+			"--device", "0",
+			"--type", "hdd",
+			"--medium", uncompressedPath,
+			"--mtype", "immutable",
+		},
+	}); err != nil {
+		return err
+	}
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "attach config drive",
+		args: []string{
+			"storageattach", id,
+			"--storagectl", "SATA",
+			"--port", "1",
+			"--device", "0",
+			"--type", "hdd",
+			"--medium", configDriveVMDKPath,
+			"--mtype", "immutable",
+		},
+	}); err != nil {
 		return err
 	}
 
-	p.logger.Printf("starting vm")
-	if err := exec.Command("VBoxManage", "startvm", id, "--type", "headless").Run(); err != nil {
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "start vm",
+		args: []string{
+			"startvm", id,
+			"--type", "headless",
+		},
+	}); err != nil {
 		return err
 	}
 
