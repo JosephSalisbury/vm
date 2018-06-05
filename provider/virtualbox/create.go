@@ -9,10 +9,11 @@ import (
 	"strconv"
 
 	"github.com/JosephSalisbury/vm/coreos"
+	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/provider"
 )
 
-func (p *virtualBoxProvider) Create(channel string, ignitionPath string, cpu int, ram int) error {
+func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition, cpu int, ram int) error {
 	// TODO: Validate channel, ignitionPath, cpu, ram.
 
 	p.logger.Printf("fetching latest CoreOS Container Linux version for channel %v", channel)
@@ -58,12 +59,12 @@ func (p *virtualBoxProvider) Create(channel string, ignitionPath string, cpu int
 	configDriveImagePath := path.Join(configDir, "configdrive.img")
 	configDriveVMDKPath := path.Join(configDir, "configdrive.vmdk")
 
-	p.logger.Printf("using ignition config at %s", ignitionPath)
+	p.logger.Printf("using ignition config at %s", ignition.Path())
 	p.logger.Printf("configdrive image is at %s", configDriveImagePath)
 	p.logger.Printf("configdrive vmdk is at %s", configDriveVMDKPath)
 
 	p.logger.Printf("creating configdrive")
-	vboxConfigdriveGenOut, err := exec.Command("bash", "-c", fmt.Sprintf("cat %s | vbox-configdrive-gen > %s", ignitionPath, configDriveImagePath)).Output()
+	vboxConfigdriveGenOut, err := exec.Command("bash", "-c", fmt.Sprintf("cat %s | vbox-configdrive-gen > %s", ignition.Path(), configDriveImagePath)).Output()
 	if err != nil {
 		p.logger.Printf("%s", string(vboxConfigdriveGenOut))
 		return err

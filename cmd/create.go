@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/provider"
 	"github.com/JosephSalisbury/vm/provider/providerset"
 )
@@ -26,10 +27,10 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 		RunE:         createRun,
 	}
 
-	channel  string
-	cpu      int
-	ram      int
-	ignition string
+	channel      string
+	cpu          int
+	ram          int
+	ignitionPath string
 )
 
 // TODO: Add support for passing a Container Linux Config.
@@ -40,13 +41,21 @@ func init() {
 	createCmd.Flags().StringVar(&channel, "channel", "stable", "channel for CoreOS Container Linux")
 	createCmd.Flags().IntVar(&cpu, "cpu", 2, "number of CPU cores for the VM")
 	createCmd.Flags().IntVar(&ram, "ram", 4, "amount of RAM (in GB) for the VM")
-	createCmd.Flags().StringVar(&ignition, "ignition", "./config.ign", "path to Ignition Config")
+	createCmd.Flags().StringVar(&ignitionPath, "ignition", "./config.ign", "path to Ignition Config")
 
 	rootCmd.AddCommand(createCmd)
 }
 
 func createRun(cmd *cobra.Command, args []string) error {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
+
+	i, err := ignition.New(ignition.Config{
+		Logger: logger,
+		Path:   ignitionPath,
+	})
+	if err != nil {
+		return err
+	}
 
 	c := provider.Config{
 		Logger: logger,
@@ -57,7 +66,7 @@ func createRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := p.Create(channel, ignition, cpu, ram); err != nil {
+	if err := p.Create(channel, i, cpu, ram); err != nil {
 		return err
 	}
 
