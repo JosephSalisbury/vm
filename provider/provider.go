@@ -3,6 +3,8 @@ package provider
 import (
 	"errors"
 	"log"
+
+	"github.com/JosephSalisbury/vm/ignition"
 )
 
 var (
@@ -19,9 +21,9 @@ type Name string
 type Interface interface {
 	// Create creates a CoreOS Container Linux Virtual Machine,
 	// with the latest version of the given channel,
-	// the given ignitionPath content,
+	// the given Ignition Config,
 	// `cpu` cores, and `ram` GB of RAM.
-	Create(channel string, ignitionPath string, cpu int, ram int) error
+	Create(channel string, ignition *ignition.Ignition, cpu int, ram int) error
 
 	// Delete deletes the specified VM.
 	Delete(id string) error
