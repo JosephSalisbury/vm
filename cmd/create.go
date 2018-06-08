@@ -9,6 +9,7 @@ import (
 	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/provider"
 	"github.com/JosephSalisbury/vm/provider/providerset"
+	"github.com/JosephSalisbury/vm/secrets"
 )
 
 var (
@@ -27,10 +28,11 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 		RunE:         createRun,
 	}
 
-	channel      string
-	cpu          int
-	ram          int
-	ignitionPath string
+	channel              string
+	cpu                  int
+	ram                  int
+	ignitionPath         string
+	secretsDirectoryPath string
 )
 
 // TODO: Add support for passing a Container Linux Config.
@@ -42,6 +44,7 @@ func init() {
 	createCmd.Flags().IntVar(&cpu, "cpu", 2, "number of CPU cores for the VM")
 	createCmd.Flags().IntVar(&ram, "ram", 4, "amount of RAM (in GB) for the VM")
 	createCmd.Flags().StringVar(&ignitionPath, "ignition", "./config.ign", "path to Ignition Config")
+	createCmd.Flags().StringVar(&secretsDirectoryPath, "secrets", "/Users/joseph/secrets/", "path to directory containing secrets")
 
 	rootCmd.AddCommand(createCmd)
 }
@@ -49,9 +52,18 @@ func init() {
 func createRun(cmd *cobra.Command, args []string) error {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 
+	s, err := secrets.New(secrets.Config{
+		Directory: secretsDirectoryPath,
+		Logger:    logger,
+	})
+	if err != nil {
+		return err
+	}
+
 	i, err := ignition.New(ignition.Config{
-		Logger: logger,
-		Path:   ignitionPath,
+		Logger:  logger,
+		Path:    ignitionPath,
+		Secrets: s,
 	})
 	if err != nil {
 		return err
