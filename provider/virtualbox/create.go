@@ -51,6 +51,10 @@ func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition,
 		}
 	}
 
+	if err := ignition.Create(); err != nil {
+		return err
+	}
+
 	p.logger.Printf("building config drive")
 	configDir, err := ioutil.TempDir("", "vmConfig")
 	if err != nil {
