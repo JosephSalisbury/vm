@@ -1,8 +1,7 @@
 package virtualbox
 
 import (
-	"fmt"
-	"strconv"
+	"os/exec"
 	"strings"
 
 	"github.com/JosephSalisbury/vm/provider"
@@ -10,15 +9,9 @@ import (
 
 const (
 	nameIndex = 1
-	portIndex = 18
 
-	comma         = ","
 	newLine       = "\n"
-	portLine      = "host port"
 	quotationMark = "\""
-	space         = " "
-
-	localhost = "127.0.0.1"
 )
 
 func (p *virtualBoxProvider) List() ([]provider.Status, error) {
@@ -43,41 +36,27 @@ func (p *virtualBoxProvider) List() ([]provider.Status, error) {
 		}
 	}
 
+	// Ping network to refresh arp.
+	if err := exec.Command("bash", "-c", "for i in {1..254}; do ping -c 1 192.168.1.$i & done").Run(); err != nil {
+		return nil, err
+	}
+
 	// Create a slice of VM statuses.
 	statuses := []provider.Status{}
 	for _, name := range names {
 		// Create the VM status.
 		status := provider.Status{
-			ID: name,
-			IP: localhost,
+			ID:   name,
+			Port: 22,
 		}
 
-		// Get the info for this VM.
-		showVMInfoOut, err := p.vboxmanage(vboxManageCommand{
-			description: fmt.Sprintf("show VM info for VM '%s'", status.ID),
-			args: []string{
-				"showvminfo", status.ID,
-			},
-		})
+		// Grab IP from arp.
+		output, err := exec.Command("bash", "-c", "arp -a | grep -E '192.168.1.*' | grep -v 'incomplete' | grep -v '254' | grep -v '255' | tail -n 1 | awk -F '(' '{print $2}' | awk -F ')' '{print $1}'").Output()
 		if err != nil {
 			return nil, err
 		}
-		showVMInfoLines := strings.Split(showVMInfoOut, newLine)
 
-		// Get the port for this VM.
-		for _, line := range showVMInfoLines {
-			if strings.Contains(line, portLine) {
-				portStringWithSuffix := strings.Split(line, space)[portIndex]
-				portString := strings.TrimSuffix(portStringWithSuffix, comma)
-
-				port, err := strconv.Atoi(portString)
-				if err != nil {
-					return nil, err
-				}
-
-				status.Port = port
-			}
-		}
+		status.IP = strings.TrimSuffix(string(output), newLine)
 
 		statuses = append(statuses, status)
 	}

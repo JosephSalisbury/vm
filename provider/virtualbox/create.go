@@ -106,7 +106,17 @@ func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition,
 			"--cpus", strconv.Itoa(cpu),
 			"--memory", strconv.Itoa(ram * 1024),
 			"--audio", "none",
-			"--natpf1", fmt.Sprintf("ssh,tcp,,%v,,22", getFreePort()),
+		},
+	}); err != nil {
+		return err
+	}
+
+	if _, err := p.vboxmanage(vboxManageCommand{
+		description: "configure network connection",
+		args: []string{
+			"modifyvm", id,
+			"--nic1", "bridged",
+			"--bridgeadapter1", "en0",
 		},
 	}); err != nil {
 		return err
