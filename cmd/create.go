@@ -41,8 +41,8 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 
 func init() {
 	createCmd.Flags().StringVar(&channel, "channel", "stable", "channel for CoreOS Container Linux")
-	createCmd.Flags().IntVar(&cpu, "cpu", 2, "number of CPU cores for the VM")
-	createCmd.Flags().IntVar(&ram, "ram", 4, "amount of RAM (in GB) for the VM")
+	createCmd.Flags().IntVar(&cpu, "cpu", 4, "number of CPU cores for the VM")
+	createCmd.Flags().IntVar(&ram, "ram", 8, "amount of RAM (in GB) for the VM")
 	createCmd.Flags().StringVar(&ignitionPath, "ignition", "/Users/joseph/go/src/github.com/JosephSalisbury/ignition/config.ign", "path to Ignition Config")
 	createCmd.Flags().StringVar(&secretsDirectoryPath, "secrets", "/Users/joseph/secrets/", "path to directory containing secrets")
 
