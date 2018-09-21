@@ -64,6 +64,8 @@ func New(config Config) (*Ignition, error) {
 
 // Create performs any necessary setup for the Ignition Config.
 func (i *Ignition) Create() error {
+	i.logger.Printf("creating ignition config")
+
 	bytes, err := ioutil.ReadFile(i.path)
 	if err != nil {
 		return err

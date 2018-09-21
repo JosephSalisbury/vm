@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	idLength = 6
-	letters  = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	idLength = 5
+	letters  = []rune("abcdefghijklmnopqrstuvwxyz")
 )
 
 func init() {
