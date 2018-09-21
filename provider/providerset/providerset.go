@@ -6,15 +6,17 @@ import (
 	"strings"
 
 	"github.com/JosephSalisbury/vm/provider"
+	"github.com/JosephSalisbury/vm/provider/google"
 	"github.com/JosephSalisbury/vm/provider/virtualbox"
 )
 
 var (
 	// DefaultProvider is the Provider to use if no Provider is specified by the user.
-	DefaultProvider = virtualbox.Provider
+	DefaultProvider = google.Provider
 
 	// providerConstructors is a mapping between ProviderNames and Providers.
 	providerConstructors = map[provider.Name]func(provider.Config) (provider.Interface, error){
+		google.Provider:     google.New,
 		virtualbox.Provider: virtualbox.New,
 	}
 
