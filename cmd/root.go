@@ -11,10 +11,8 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:          "vm [command]",
-		Short:        "vm is a tool for managing CoreOS Container Linux Virtual Machines",
-		SilenceUsage: true,
-		RunE:         func(cmd *cobra.Command, args []string) error { return nil },
+		Use:   "vm [command]",
+		Short: "vm is a tool for managing CoreOS Container Linux Virtual Machines",
 	}
 
 	providerName string
