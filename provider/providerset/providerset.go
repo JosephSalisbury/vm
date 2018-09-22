@@ -3,6 +3,7 @@ package providerset
 
 import (
 	"errors"
+	"sort"
 	"strings"
 
 	"github.com/JosephSalisbury/vm/provider"
@@ -42,6 +43,8 @@ func Names() string {
 	for providerName, _ := range providerConstructors {
 		providerNames = append(providerNames, string(providerName))
 	}
+
+	sort.Strings(providerNames)
 
 	return strings.Join(providerNames, ", ")
 }
