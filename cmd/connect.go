@@ -75,10 +75,13 @@ func connectRun(cmd *cobra.Command, args []string) error {
 
 	switch len(args) {
 	case 0:
-		if len(statuses) == 1 {
+		switch len(statuses) {
+		case 0:
+			return NoVMError
+		case 1:
 			ip = statuses[0].IP
 			port = statuses[0].Port
-		} else {
+		default:
 			return MultipleVMError
 		}
 	case 1:
