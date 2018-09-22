@@ -8,7 +8,6 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/JosephSalisbury/vm/coreos"
 	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/provider"
 )
@@ -17,13 +16,13 @@ func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition,
 	// TODO: Validate channel, ignitionPath, cpu, ram.
 
 	p.logger.Printf("fetching latest CoreOS Container Linux version for channel %v", channel)
-	version, err := coreos.LatestVersion(channel)
+	version, err := LatestVersion(channel)
 	if err != nil {
 		return err
 	}
 	p.logger.Printf("latest version for channel %v is %v", channel, version)
 
-	compressedPath := coreos.CompressedPath(channel, version)
+	compressedPath := CompressedPath(channel, version)
 	p.logger.Printf("checking if image is already downloaded to %v", compressedPath)
 
 	if _, err := os.Stat(compressedPath); err == nil {
@@ -31,14 +30,14 @@ func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition,
 	} else {
 		p.logger.Printf("downloading image")
 
-		if err := coreos.DownloadImage(channel, compressedPath); err != nil {
+		if err := DownloadImage(channel, compressedPath); err != nil {
 			return err
 		}
 
 		// TODO: Verify image.
 	}
 
-	uncompressedPath := coreos.UncompressedPath(channel, version)
+	uncompressedPath := UncompressedPath(channel, version)
 	p.logger.Printf("checking if image is already decompressed to %v", uncompressedPath)
 
 	if _, err := os.Stat(uncompressedPath); err == nil {
@@ -46,7 +45,7 @@ func (p *virtualBoxProvider) Create(channel string, ignition *ignition.Ignition,
 	} else {
 		p.logger.Printf("decompressing image")
 
-		if err := coreos.DecompressImage(compressedPath); err != nil {
+		if err := DecompressImage(compressedPath); err != nil {
 			return err
 		}
 	}

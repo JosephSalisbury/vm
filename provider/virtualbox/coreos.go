@@ -1,4 +1,4 @@
-package coreos
+package virtualbox
 
 import (
 	"fmt"
@@ -12,12 +12,10 @@ import (
 )
 
 var (
-	// TODO: This should be part of virtualbox provider.
 	downloadURLFormat = "https://%s.release.core-os.net/amd64-usr/current/coreos_production_virtualbox_image.vmdk.bz2"
 	versionURLFormat  = "https://%s.release.core-os.net/amd64-usr/current/version.txt"
 
-	prefix = "vmCoreOSImages"
-	// TODO: These should be part of virtualbox provider.
+	prefix           = "vmCoreOSImages"
 	compressedName   = "coreos_production_virtualbox_image.vmdk.bz2"
 	uncompressedName = "coreos_production_virtualbox_image.vmdk"
 )
