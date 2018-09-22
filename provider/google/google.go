@@ -14,7 +14,7 @@ const (
 
 var (
 	// Provider is a Provider that uses Google Cloud.
-	Provider = provider.Name("Google")
+	Provider = provider.Name("google")
 )
 
 type googleProvider struct {

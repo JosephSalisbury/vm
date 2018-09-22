@@ -10,7 +10,7 @@ import (
 
 var (
 	// Provider is a Provider that uses VirtualBox.
-	Provider = provider.Name("VirtualBox")
+	Provider = provider.Name("virtualbox")
 
 	vdiName = "coreos_production_qemu_image.vdi"
 )
