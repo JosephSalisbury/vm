@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	zone = "us-central1-a"
+	zone = "europe-west2-a"
 )
 
 var (
