@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/JosephSalisbury/vm/ignition"
+	"github.com/JosephSalisbury/vm/ignition/ignitionset"
 	"github.com/JosephSalisbury/vm/provider"
 	"github.com/JosephSalisbury/vm/provider/providerset"
 	"github.com/JosephSalisbury/vm/secrets"
@@ -21,7 +23,7 @@ var (
 With cloud providers, a VM type with resources closest to the requested resources will be chosen.
 The correct CoreOS image for the specified channel will be chosen automatically, as well.
 
-If a Container Linux Config is specified (with --ignition) instead of an Ignition Config,
+If a Container Linux Config is specified (with --ignition-path) instead of an Ignition Config,
 ct will be called (if available) to compile the Container Linux Config into an Ignition Config.
 If a URL is specified instead of a local path, the file will be downloaded and used.`,
 		SilenceUsage: true,
@@ -32,6 +34,7 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 	cpu                  int
 	ensure               bool
 	ram                  int
+	ignitionName         string
 	ignitionPath         string
 	secretsDirectoryPath string
 )
@@ -45,7 +48,13 @@ func init() {
 	createCmd.Flags().IntVar(&cpu, "cpu", 4, "number of CPU cores for the VM")
 	createCmd.Flags().BoolVar(&ensure, "ensure", false, "ensure that only one VM is running (useful with 'vm create --ensure && vm connect')")
 	createCmd.Flags().IntVar(&ram, "ram", 8, "amount of RAM (in GB) for the VM")
-	createCmd.Flags().StringVar(&ignitionPath, "ignition", "/Users/joseph/go/src/github.com/JosephSalisbury/ignition/config.ign", "path to Ignition Config")
+	createCmd.Flags().StringVar(
+		&ignitionName,
+		"ignition",
+		string(ignitionset.DefaultIgnition),
+		fmt.Sprintf("which Igniton should be used, options are: %s", ignitionset.Names()),
+	)
+	createCmd.Flags().StringVar(&ignitionPath, "ignition-path", "/Users/joseph/go/src/github.com/JosephSalisbury/ignition/config.ign", "path to Ignition Config")
 	createCmd.Flags().StringVar(&secretsDirectoryPath, "secrets", "/Users/joseph/secrets/", "path to directory containing secrets")
 
 	rootCmd.AddCommand(createCmd)
@@ -62,7 +71,7 @@ func createRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	i, err := ignition.New(ignition.Config{
+	i, err := ignitionset.New(ignition.Name(ignitionName), ignition.Config{
 		Logger:  logger,
 		Path:    ignitionPath,
 		Secrets: s,
@@ -71,11 +80,9 @@ func createRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	c := provider.Config{
+	p, err := providerset.New(provider.Name(providerName), provider.Config{
 		Logger: logger,
-	}
-
-	p, err := providerset.New(provider.Name(providerName), c)
+	})
 	if err != nil {
 		return err
 	}

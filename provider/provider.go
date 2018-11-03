@@ -23,7 +23,7 @@ type Interface interface {
 	// with the latest version of the given channel,
 	// the given Ignition Config,
 	// `cpu` cores, and `ram` GB of RAM.
-	Create(channel string, ignition *ignition.Ignition, cpu int, ram int) error
+	Create(channel string, ignition ignition.Interface, cpu int, ram int) error
 
 	// Delete deletes the specified VM.
 	Delete(id string) error

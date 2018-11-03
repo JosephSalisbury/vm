@@ -7,13 +7,18 @@ import (
 	"github.com/JosephSalisbury/vm/provider"
 )
 
-func (p *googleProvider) Create(channel string, ignition *ignition.Ignition, cpu int, ram int) error {
+func (p *googleProvider) Create(channel string, ignition ignition.Interface, cpu int, ram int) error {
 	id := provider.ID()
 
 	machineType := getMachineType(cpu, ram)
 	p.logger.Printf("using machine type: %s", machineType)
 
 	if err := ignition.Create(); err != nil {
+		return err
+	}
+
+	ignitionPath, err := ignition.Path()
+	if err != nil {
 		return err
 	}
 
@@ -28,7 +33,7 @@ func (p *googleProvider) Create(channel string, ignition *ignition.Ignition, cpu
 			"--image-family", fmt.Sprintf("coreos-%s", channel),
 			"--zone", zone,
 			"--machine-type", machineType,
-			"--metadata-from-file", fmt.Sprintf("user-data=%s", ignition.Path()),
+			"--metadata-from-file", fmt.Sprintf("user-data=%s", ignitionPath),
 		},
 	}); err != nil {
 		return err
