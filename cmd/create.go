@@ -30,6 +30,7 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 
 	channel              string
 	cpu                  int
+	ensure               bool
 	ram                  int
 	ignitionPath         string
 	secretsDirectoryPath string
@@ -42,6 +43,7 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 func init() {
 	createCmd.Flags().StringVar(&channel, "channel", "stable", "channel for CoreOS Container Linux")
 	createCmd.Flags().IntVar(&cpu, "cpu", 4, "number of CPU cores for the VM")
+	createCmd.Flags().BoolVar(&ensure, "ensure", false, "ensure that only one VM is running (useful with 'vm create --ensure && vm connect')")
 	createCmd.Flags().IntVar(&ram, "ram", 8, "amount of RAM (in GB) for the VM")
 	createCmd.Flags().StringVar(&ignitionPath, "ignition", "/Users/joseph/go/src/github.com/JosephSalisbury/ignition/config.ign", "path to Ignition Config")
 	createCmd.Flags().StringVar(&secretsDirectoryPath, "secrets", "/Users/joseph/secrets/", "path to directory containing secrets")
@@ -76,6 +78,22 @@ func createRun(cmd *cobra.Command, args []string) error {
 	p, err := providerset.New(provider.Name(providerName), c)
 	if err != nil {
 		return err
+	}
+
+	if ensure {
+		statuses, err := p.List()
+		if err != nil {
+			return err
+		}
+
+		switch len(statuses) {
+		case 0:
+			break
+		case 1:
+			return nil
+		default:
+			return MultipleVMError
+		}
 	}
 
 	if err := p.Create(channel, i, cpu, ram); err != nil {
