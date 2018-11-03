@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -36,6 +37,7 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 	ram                  int
 	ignitionName         string
 	ignitionPath         string
+	ignitionURL          string
 	secretsDirectoryPath string
 )
 
@@ -54,7 +56,8 @@ func init() {
 		string(ignitionset.DefaultIgnition),
 		fmt.Sprintf("which Igniton should be used, options are: %s", ignitionset.Names()),
 	)
-	createCmd.Flags().StringVar(&ignitionPath, "ignition-path", "/Users/joseph/go/src/github.com/JosephSalisbury/ignition/config.ign", "path to Ignition Config")
+	createCmd.Flags().StringVar(&ignitionPath, "ignition-path", "", "path to Ignition Config")
+	createCmd.Flags().StringVar(&ignitionURL, "ignition-url", "https://raw.githubusercontent.com/JosephSalisbury/ignition/master/config.yaml", "url to Container Linux Config")
 	createCmd.Flags().StringVar(&secretsDirectoryPath, "secrets", "/Users/joseph/secrets/", "path to directory containing secrets")
 
 	rootCmd.AddCommand(createCmd)
@@ -71,9 +74,15 @@ func createRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	url, err := url.Parse(ignitionURL)
+	if err != nil {
+		return err
+	}
+
 	i, err := ignitionset.New(ignition.Name(ignitionName), ignition.Config{
 		Logger:  logger,
 		Path:    ignitionPath,
+		URL:     *url,
 		Secrets: s,
 	})
 	if err != nil {

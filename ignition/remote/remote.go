@@ -1,28 +1,31 @@
-package file
+package remote
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 
-	"github.com/JosephSalisbury/vm/ignition"
-	"github.com/JosephSalisbury/vm/secrets"
+	"github.com/coreos/container-linux-config-transpiler/config"
 	"github.com/coreos/ignition/config/v2_2/types"
 	"github.com/vincent-petithory/dataurl"
+
+	"github.com/JosephSalisbury/vm/ignition"
+	"github.com/JosephSalisbury/vm/secrets"
 )
 
 var (
-	// Ignition is an Ignition that uses local files.
-	Ignition = ignition.Name("file")
+	// Ignition is an Ignition that fetches a Container Linux Config
+	// from a URL, and compiles it to an Ignition Config.
+	Ignition = ignition.Name("remote")
 )
 
-type fileIgnition struct {
+type remoteIgnition struct {
 	logger  *log.Logger
-	path    string
+	url     url.URL
 	secrets *secrets.Secrets
 
 	tempPath string
@@ -32,19 +35,16 @@ func New(config ignition.Config) (ignition.Interface, error) {
 	if config.Logger == nil {
 		return nil, ignition.InvalidConfigError
 	}
-	if config.Path == "" {
-		return nil, ignition.InvalidConfigError
-	}
-	if _, err := os.Stat(config.Path); os.IsNotExist(err) {
+	if config.URL.String() == "" {
 		return nil, ignition.InvalidConfigError
 	}
 	if config.Secrets == nil {
 		return nil, ignition.InvalidConfigError
 	}
 
-	i := &fileIgnition{
+	i := &remoteIgnition{
 		logger:  config.Logger,
-		path:    config.Path,
+		url:     config.URL,
 		secrets: config.Secrets,
 
 		tempPath: "",
@@ -53,21 +53,28 @@ func New(config ignition.Config) (ignition.Interface, error) {
 	return i, nil
 }
 
-// Create performs any necessary setup for the Ignition Config.
-func (i *fileIgnition) Create() error {
-	i.logger.Printf("creating ignition config")
+// Create downloads a Container Linux Config from the URL,
+// compiles it to an Ignition Config, and adds any secrets.
+func (i *remoteIgnition) Create() error {
+	i.logger.Printf("downloading Container Linux Config")
 
-	bytes, err := ioutil.ReadFile(i.path)
+	resp, err := http.Get(i.url.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	containerLinuxConfig, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	var ignition types.Config
-	if err := json.Unmarshal(bytes, &ignition); err != nil {
-		return err
-	}
+	i.logger.Printf("compiling Container Linux Config to Ignition Config")
 
-	// TODO: Update hostname with VM ID.
+	cfg, ast, _ := config.Parse(containerLinuxConfig)
+	ignitionConfig, _ := config.Convert(cfg, "", ast)
+
+	i.logger.Printf("adding secrets to Ignition Config")
 
 	files, err := i.secrets.Files()
 	if err != nil {
@@ -113,9 +120,9 @@ func (i *fileIgnition) Create() error {
 		secretFiles = append(secretFiles, secretFile)
 	}
 
-	ignition.Storage.Files = append(ignition.Storage.Files, secretFiles...)
+	ignitionConfig.Storage.Files = append(ignitionConfig.Storage.Files, secretFiles...)
 
-	updatedBytes, err := json.MarshalIndent(ignition, "", "  ")
+	updatedBytes, err := json.MarshalIndent(ignitionConfig, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -134,8 +141,8 @@ func (i *fileIgnition) Create() error {
 	return nil
 }
 
-// Path returns a path where the Ignition Config can be read from.
-func (i *fileIgnition) Path() (string, error) {
+// Path returns the path where the Ignition Config can be read from.
+func (i *remoteIgnition) Path() (string, error) {
 	// TODO: Error if the Ignition Config has not been created.
 	return i.tempPath, nil
 }

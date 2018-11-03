@@ -3,6 +3,7 @@ package ignition
 import (
 	"errors"
 	"log"
+	"net/url"
 
 	"github.com/JosephSalisbury/vm/secrets"
 )
@@ -30,6 +31,9 @@ type Config struct {
 
 	// Path is the location of the Ignition Config on disk.
 	Path string
+
+	// URL is the location of the Container Linux Config.
+	URL url.URL
 
 	// Secrets are sensitive material that may need to be referenced.
 	Secrets *secrets.Secrets

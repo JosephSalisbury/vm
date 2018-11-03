@@ -7,14 +7,16 @@ import (
 
 	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/ignition/file"
+	"github.com/JosephSalisbury/vm/ignition/remote"
 )
 
 var (
 	// DefaultIgnition is the Ignition to use if no Ignition is specified.
-	DefaultIgnition = file.Ignition
+	DefaultIgnition = remote.Ignition
 
 	ignitionConstructors = map[ignition.Name]func(ignition.Config) (ignition.Interface, error){
-		file.Ignition: file.New,
+		file.Ignition:   file.New,
+		remote.Ignition: remote.New,
 	}
 
 	// UnknownIgnitionError is the error returned if the IgnitionName given is unknown.
