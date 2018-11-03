@@ -8,7 +8,6 @@ import (
 
 	"github.com/JosephSalisbury/vm/provider"
 	"github.com/JosephSalisbury/vm/provider/google"
-	"github.com/JosephSalisbury/vm/provider/virtualbox"
 )
 
 var (
@@ -17,8 +16,7 @@ var (
 
 	// providerConstructors is a mapping between ProviderNames and Providers.
 	providerConstructors = map[provider.Name]func(provider.Config) (provider.Interface, error){
-		google.Provider:     google.New,
-		virtualbox.Provider: virtualbox.New,
+		google.Provider: google.New,
 	}
 
 	// UnknownProviderError is the error returned if the ProviderName given is unknown.
