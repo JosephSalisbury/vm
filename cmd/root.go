@@ -16,6 +16,10 @@ var (
 	}
 
 	providerName string
+
+	googleCredentialsFilePath string
+	googleProject             string
+	googleZone                string
 )
 
 func init() {
@@ -26,6 +30,10 @@ func init() {
 		string(providerset.DefaultProvider),
 		fmt.Sprintf("which VM provider should be used, options are: %s", providerset.Names()),
 	)
+
+	rootCmd.PersistentFlags().StringVar(&googleCredentialsFilePath, "google-credentials-file-path", "/Users/joseph/secrets/vm-credentials.json", "path to Google Cloud credentials JSON file")
+	rootCmd.PersistentFlags().StringVar(&googleProject, "google-project", "dev-vm-216913", "ID of the Google Cloud project")
+	rootCmd.PersistentFlags().StringVar(&googleZone, "google-zone", "europe-west1-b", "Google Cloud zone to use")
 }
 
 func Execute() {

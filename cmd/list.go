@@ -30,6 +30,10 @@ func listRun(cmd *cobra.Command, args []string) error {
 
 	c := provider.Config{
 		Logger: logger,
+
+		GoogleCredentialsFilePath: googleCredentialsFilePath,
+		GoogleProject:             googleProject,
+		GoogleZone:                googleZone,
 	}
 
 	p, err := providerset.New(provider.Name(providerName), c)

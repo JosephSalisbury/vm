@@ -2,9 +2,11 @@ package google
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/JosephSalisbury/vm/ignition"
 	"github.com/JosephSalisbury/vm/provider"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func (p *googleProvider) Create(channel string, ignition ignition.Interface, cpu int, ram int) error {
@@ -21,23 +23,59 @@ func (p *googleProvider) Create(channel string, ignition ignition.Interface, cpu
 	if err != nil {
 		return err
 	}
-
-	if _, err := p.gcloud(gCloudCommand{
-		description: "create instance",
-		args: []string{
-			"compute",
-			"instances",
-			"create",
-			id,
-			"--image-project", "coreos-cloud",
-			"--image-family", fmt.Sprintf("coreos-%s", channel),
-			"--zone", zone,
-			"--machine-type", machineType,
-			"--metadata-from-file", fmt.Sprintf("user-data=%s", ignitionPath),
-		},
-	}); err != nil {
+	ignitionData, err := ioutil.ReadFile(ignitionPath)
+	if err != nil {
 		return err
 	}
+	ignitionDataString := string(ignitionData)
+
+	p.logger.Printf("creating instance")
+
+	if _, err := p.instancesService.Insert(
+		p.project,
+		p.zone,
+		&compute.Instance{
+			Disks: []*compute.AttachedDisk{
+				{
+					AutoDelete: true,
+					Boot:       true,
+					InitializeParams: &compute.AttachedDiskInitializeParams{
+						SourceImage: fmt.Sprintf(
+							"projects/coreos-cloud/global/images/family/coreos-%v",
+							channel,
+						),
+					},
+				},
+			},
+			Name:        id,
+			MachineType: fmt.Sprintf("zones/%v/machineTypes/%v", p.zone, machineType),
+			Metadata: &compute.Metadata{
+				Items: []*compute.MetadataItems{
+					{
+						Key:   "user-data",
+						Value: &ignitionDataString,
+					},
+				},
+			},
+			NetworkInterfaces: []*compute.NetworkInterface{
+				{
+					AccessConfigs: []*compute.AccessConfig{
+						{
+							Name: "External NAT",
+							Type: "ONE_TO_ONE_NAT",
+						},
+					},
+				},
+			},
+			Scheduling: &compute.Scheduling{
+				Preemptible: p.preemptible,
+			},
+		},
+	).Do(); err != nil {
+		return err
+	}
+
+	p.logger.Printf("instance created")
 
 	return nil
 }
