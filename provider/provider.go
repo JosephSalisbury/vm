@@ -40,6 +40,8 @@ type Config struct {
 
 	// GoogleCredentialsFilePath is the path to a Google credentials file.
 	GoogleCredentialsFilePath string
+	// GooglePreemptible is whether preemptible VMs should be used.
+	GooglePreemptible bool
 	// GoogleProject is the project in Google Cloud.
 	GoogleProject string
 	// GoogleZone is the zone in Google Cloud.

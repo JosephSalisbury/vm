@@ -60,6 +60,7 @@ func connectRun(cmd *cobra.Command, args []string) error {
 		Logger: logger,
 
 		GoogleCredentialsFilePath: googleCredentialsFilePath,
+		GooglePreemptible:         googlePreemptible,
 		GoogleProject:             googleProject,
 		GoogleZone:                googleZone,
 	}
