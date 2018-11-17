@@ -37,6 +37,13 @@ type Interface interface {
 type Config struct {
 	// Logger is a logger that Providers can use for outputting information.
 	Logger *log.Logger
+
+	// GoogleCredentialsFilePath is the path to a Google credentials file.
+	GoogleCredentialsFilePath string
+	// GoogleProject is the project in Google Cloud.
+	GoogleProject string
+	// GoogleZone is the zone in Google Cloud.
+	GoogleZone string
 }
 
 type Status struct {

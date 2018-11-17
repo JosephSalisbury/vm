@@ -47,9 +47,9 @@ If a URL is specified instead of a local path, the file will be downloaded and u
 
 func init() {
 	createCmd.Flags().StringVar(&channel, "channel", "stable", "channel for CoreOS Container Linux")
-	createCmd.Flags().IntVar(&cpu, "cpu", 4, "number of CPU cores for the VM")
+	createCmd.Flags().IntVar(&cpu, "cpu", 64, "number of CPU cores for the VM")
 	createCmd.Flags().BoolVar(&ensure, "ensure", false, "ensure that only one VM is running (useful with 'vm create --ensure && vm connect')")
-	createCmd.Flags().IntVar(&ram, "ram", 8, "amount of RAM (in GB) for the VM")
+	createCmd.Flags().IntVar(&ram, "ram", 120, "amount of RAM (in GB) for the VM")
 	createCmd.Flags().StringVar(
 		&ignitionName,
 		"ignition",
@@ -91,6 +91,10 @@ func createRun(cmd *cobra.Command, args []string) error {
 
 	p, err := providerset.New(provider.Name(providerName), provider.Config{
 		Logger: logger,
+
+		GoogleCredentialsFilePath: googleCredentialsFilePath,
+		GoogleProject:             googleProject,
+		GoogleZone:                googleZone,
 	})
 	if err != nil {
 		return err

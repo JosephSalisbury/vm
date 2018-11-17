@@ -2,14 +2,13 @@
 package google
 
 import (
+	"io/ioutil"
 	"log"
-	"os/exec"
 
 	"github.com/JosephSalisbury/vm/provider"
-)
-
-const (
-	zone = "europe-west2-a"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	compute "google.golang.org/api/compute/v1"
 )
 
 var (
@@ -18,7 +17,11 @@ var (
 )
 
 type googleProvider struct {
-	logger *log.Logger
+	logger           *log.Logger
+	instancesService *compute.InstancesService
+
+	project string
+	zone    string
 }
 
 func New(config provider.Config) (provider.Interface, error) {
@@ -26,31 +29,40 @@ func New(config provider.Config) (provider.Interface, error) {
 		return nil, provider.InvalidConfigError
 	}
 
-	if _, err := exec.LookPath("gcloud"); err != nil {
-		return nil, GCloudMissingError
+	if config.GoogleCredentialsFilePath == "" {
+		return nil, provider.InvalidConfigError
+	}
+	if config.GoogleProject == "" {
+		return nil, provider.InvalidConfigError
+	}
+	if config.GoogleZone == "" {
+		return nil, provider.InvalidConfigError
 	}
 
+	jsonData, err := ioutil.ReadFile(config.GoogleCredentialsFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := google.JWTConfigFromJSON(jsonData, "https://www.googleapis.com/auth/compute")
+	if err != nil {
+		return nil, err
+	}
+
+	client := conf.Client(oauth2.NoContext)
+	service, err := compute.New(client)
+	if err != nil {
+		return nil, err
+	}
+	instancesService := compute.NewInstancesService(service)
+
 	p := &googleProvider{
-		logger: config.Logger,
+		logger:           config.Logger,
+		instancesService: instancesService,
+
+		project: config.GoogleProject,
+		zone:    config.GoogleZone,
 	}
 
 	return p, nil
-}
-
-type gCloudCommand struct {
-	description string
-	args        []string
-}
-
-func (p *googleProvider) gcloud(command gCloudCommand) (string, error) {
-	p.logger.Printf("executing: %s", command.description)
-
-	out, err := exec.Command("gcloud", command.args...).Output()
-	stringOut := string(out)
-
-	if err != nil {
-		p.logger.Printf("gcloud output: %s %s", err, stringOut)
-	}
-
-	return stringOut, err
 }
