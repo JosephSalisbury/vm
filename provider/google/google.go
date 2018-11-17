@@ -20,8 +20,9 @@ type googleProvider struct {
 	logger           *log.Logger
 	instancesService *compute.InstancesService
 
-	project string
-	zone    string
+	preemptible bool
+	project     string
+	zone        string
 }
 
 func New(config provider.Config) (provider.Interface, error) {
@@ -60,8 +61,9 @@ func New(config provider.Config) (provider.Interface, error) {
 		logger:           config.Logger,
 		instancesService: instancesService,
 
-		project: config.GoogleProject,
-		zone:    config.GoogleZone,
+		preemptible: config.GooglePreemptible,
+		project:     config.GoogleProject,
+		zone:        config.GoogleZone,
 	}
 
 	return p, nil
